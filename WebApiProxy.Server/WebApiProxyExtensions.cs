@@ -8,14 +8,19 @@ namespace WebApiProxy.Server
         /// <summary>
         /// Sets up the proxy route table entries.
         /// </summary>
-        public static void RegisterProxyRoutes(this HttpConfiguration config, string routeTemplate = "api/proxies")
+        public static void RegisterProxyRoutes(this HttpConfiguration config, string routeTemplate = "api/proxies", string exportCallback = "")
         {
             config.Routes.MapHttpRoute(
-            name: "WebApiProxy",
-            routeTemplate: routeTemplate,
-            defaults: new { id = RouteParameter.Optional },
-            constraints: null,
-            handler: new ProxyHandler(config) { InnerHandler = new HttpControllerDispatcher(config) });
+                name: "WebApiProxy",
+                routeTemplate: routeTemplate,
+                defaults: new { id = RouteParameter.Optional },
+                constraints: null,
+                handler: new ProxyHandler(config)
+                {
+                    InnerHandler = new HttpControllerDispatcher(config),
+                    ExportCallback = exportCallback
+                }
+            );
         }
     }
 }

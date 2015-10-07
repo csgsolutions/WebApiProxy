@@ -72,7 +72,8 @@ namespace WebApiProxy.Server
                                                                           IsOptional = b.ParameterDescriptor.IsOptional,
                                                                           DefaultValue = b.ParameterDescriptor.DefaultValue
                                                                       },
-                                                      Url = a.RelativePath,
+
+                                                      Url = StripQuery(a.RelativePath),
 
                                                       Description = a.Documentation ?? "",
                                                       ReturnType = ParseType(a.ResponseDescription.ResponseType ?? a.ResponseDescription.DeclaredType),
@@ -247,6 +248,24 @@ namespace WebApiProxy.Server
                 return xml.InnerText.Trim();
             }
             return String.Empty;
+        }
+
+        private static string StripQuery(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+            {
+                return string.Empty;
+            }
+
+            var i = path.IndexOf('?');
+            if (i >= 0)
+            {
+                return path.Substring(0, i);
+            }
+            else
+            {
+                return path;
+            }
         }
     }
 }

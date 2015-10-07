@@ -18,18 +18,27 @@ namespace WebApiProxy.Server
             _config = config;
         }
 
+        /// <summary>
+        /// Gets or sets the target object where the JavaScript proxies will be created.
+        /// </summary>
+        public string ExportCallback { get; set; }
+
         protected async override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, System.Threading.CancellationToken cancellationToken)
         {
             return await Task.Run(() =>
             {
                 var metadata = _metadataProvider.GetMetadata(request);
+                string exportCallback = "null";
 
                 if (request.Headers.Any(h => h.Key == "X-Proxy-Type" && h.Value.Contains("metadata")))
                 {
                     return request.CreateResponse(System.Net.HttpStatusCode.OK, metadata);
                 }
-
-                var template = new JsProxyTemplate(metadata);
+                
+                var template = new JsProxyTemplate(metadata)
+                {
+                    ExportCallback = this.ExportCallback
+                };
                 var js = new StringContent(template.TransformText());
 
                 js.Headers.ContentType = new MediaTypeHeaderValue("application/javascript");

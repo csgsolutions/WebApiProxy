@@ -15,7 +15,14 @@ namespace WebApiProxy.Server.Templates
 		public JsProxyTemplate(Metadata metadata)
 		{
             this.Metadata = metadata;
+            this.ExportTarget = "$.proxies";
+            this.ExportCallback = "null";
 		}
+
 		public Metadata Metadata { get; set; }
+
+        public string ExportTarget { get; set; }
+
+        public string ExportCallback { get; set; }
     }
 }

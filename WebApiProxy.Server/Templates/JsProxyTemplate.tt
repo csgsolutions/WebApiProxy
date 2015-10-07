@@ -4,22 +4,57 @@
 <#@ import namespace="System.Text" #>
 <#@ import namespace="System.Collections.Generic" #>
 
-(function($) {
+;(function(exportCallback) {
 	"use strict";
 
-	if (!$) {
-		throw "jQuery is required";
-	}
-
-	$.proxies = $.proxies || { 
-		baseUrl: "<#= this.Metadata.Host #>/"
+	var exports = {
+		options: {
+			baseUrl: "<#= this.Metadata.Host #>",
+			ajax:  function() {
+				if (typeof window === 'undefined' || typeof window.jQuery === 'undefined') {
+					throw "WebApiProxy: jQuery is required if no other ajax method has been defined.";
+				}
+				return $.ajax.apply($, arguments);
+			},
+			ajaxDefaults: {},
+		},
+		proxies: {}
 	};
 
+	function invoke(url, type, urlParams, body) {
+		url += getQueryString(urlParams);
+
+		var ajaxOptions = extend({}, exports.options.ajaxDefaults, this.defaultOptions, {
+            "url": combinePath(exports.options.baseUrl, url),            
+            "data": ((type === 'post' || type === 'put') && body) ? JSON.stringify(body) : null,
+            "type": type
+		});
+		
+		return exports.options.ajax(ajaxOptions);
+	}
+
+
+	function extend(){
+		var extended = arguments[0] || {};
+		var prop;
+		var i;
+
+		for (i = 1; i < arguments.length; i++) {
+			for (prop in arguments[i]) {
+				if (Object.prototype.hasOwnProperty.call(arguments[i], prop)) {
+					extended[prop] = arguments[i][prop];
+				}
+			}           
+		}
+
+		return extended;
+	}
+			
 	function getQueryString(params, queryString) {
 		queryString = queryString || "";
 		for(var prop in params) {
 			if (params.hasOwnProperty(prop)) {
-				var val = getArgValue(params[prop]);
+				var val = (params[prop] == null) ? null : params[prop];
 				if (val === null) continue;
 
 				if ("" + val === "[object Object]") {
@@ -38,106 +73,84 @@
 		return queryString;
 	}
 
-	function getArgValue(val) {
-		if (val === undefined || val === null) return null;
-		return val;
-	}
-
-	function invoke(url, type, urlParams, body) {
-		//url += getQueryString(urlParams);
-
-		var ajaxOptions = $.extend({}, this.defaultOptions, {
-			url: appendPathDelimiter($.proxies.baseUrl) + url,
-			type: type,
-			beforeSend : function(xhr) {
-				if (typeof(webApiAuthToken) != "undefined" && webApiAuthToken.length > 0)
-					xhr.setRequestHeader("Authorization", "Bearer " + webApiAuthToken);
-			},
-		});
-
-		if (body) {
-			ajaxOptions.data = body;
-		}
-
-		if (this.antiForgeryToken) {
-			var token = $.isFunction(this.antiForgeryToken) ? this.antiForgeryToken() : this.antiForgeryToken;
-			if (token) {
-				ajaxOptions.headers = ajaxOptions.headers || {};
-			}
-		}
 	
-		return $.ajax(ajaxOptions);
-	}
 
-	function defaultAntiForgeryTokenAccessor() {
-		return $("input[name=__RequestVerificationToken]").val();
-	}
+	function combinePath() {
+        var path = '';
+        var s;
+        var first;
+        var last;
 
-	function endsWith(str, suffix) {
-		return str.indexOf(suffix, str.length - suffix.length) !== -1;
-	}
+        for (var i = 0; i < arguments.length; i++) {
+            if (arguments[i] == null) {
+                continue;
+            }
+            s = arguments[i].toString();
+                        
+            first = s.indexOf('/');
 
-	function appendPathDelimiter(url){
-		if(!endsWith(url, '/')){
-			return url + '/';
-		}
-		
-		return url;
-	}
+            if (s === '/' && path.length > 0) {
+                continue;
+            }
+            else if (path[path.length-1] === '/' && first === 0) {
+                path += s.slice(1);
+            } else if (path[path.length - 1] === '/' || first === 0) {
+                path += s;
+            } else if (path.length > 0) {                
+                path += ('/'+s);
+            } else {
+                path += s;
+            }
+        }
+
+        return path;
+    }
 
 	/* Proxies */
 
-	<# foreach(var definition in this.Metadata.Definitions) { #>
-	$.proxies.<#= definition.Name.ToLower() #> = {
-		defaultOptions: {},
-		antiForgeryToken: defaultAntiForgeryTokenAccessor,
-<# foreach(var method in definition.ActionMethods) { #>
-
-<#
-	var allParameters = method.UrlParameters.AsEnumerable();
+<# foreach(var definition in this.Metadata.Definitions) { #>
+	exports.proxies["<#= definition.Name.ToLower() #>"] = {
+		"defaultOptions": {},
+<# foreach(var method in definition.ActionMethods.OrderBy(m => m.Name)) {	
+	var allParameters = method.UrlParameters.AsEnumerable();	
 	
 	if (method.BodyParameter != null) {
 		allParameters = allParameters.Concat(new [] { method.BodyParameter });
 	}
-	var selectedParameters = allParameters.Where(m => m != null).Select(m => m.Name).ToList();
-	selectedParameters.Add("options");
 
+	var selectedParameters = allParameters.Where(m => m != null).Select(m => m.Name).ToList();	
 	var parameterList = string.Join(",", selectedParameters);
-
-	
-	
 	var url = ("\"" + method.Url.Replace("{", "\" + ").Replace("}", " + \"") + "\"").Replace(" + \"\"","");
+	var parameterString = new System.Text.StringBuilder();	
+
+	if (method.UrlParameters.Any()) {
+		parameterString.Append(", {");
+		parameterString.Append(string.Join(", ", method.UrlParameters.Select(s => "'" + s.Name + "':" + s.Name)));		
+		parameterString.Append("}");
+	} else {
+		parameterString.Append(",null");
+	}
+	
+	if (method.BodyParameter != null) {
+		parameterString.Append(", ").Append(method.BodyParameter.Name);		
+	}
 
 #>
-
-
-	<#= method.Name.ToCamelCasing() #>: function(<#=parameterList#>) {
-		 var defaults = { fields: [] };
-         var settings = $.extend({}, defaults, options || {});
-		 var url = <#= url #>;
-
-		 if(settings.fields.length > 0) {
-		    url +=  url.indexOf("?") == -1 ? "?" : "&";
-			url += "fields=" + settings.fields.join();
-		 }
-
-		return invoke.call(this, url, "<#= method.Type.ToString().ToLower() #>", 
-		<# if (method.UrlParameters.Any()) { #>
-			{
-			<# foreach (var parameter in method.UrlParameters) { #>
-				<#= parameter.Name #>: <#= parameter.Name #>,
-			<# } #>
-			}
-		<# } else { #>
-			{}
-		<# } #>
-		<# if (method.BodyParameter != null) { #>
-			, <#= method.BodyParameter.Name #>);
-		<# } else { #>
-			);
-		<# } #>
-	},
+		"<#= method.Name.ToCamelCasing() #>": function(<#=parameterList#>) {
+			return invoke.call(this, <#= url #>, "<#=method.Type.ToString().ToLower()#>" <#=parameterString#>);
+		},
 <# } #> 
-};
-	<# } #>
-}(jQuery));
+	};
+<#	} #>
+
+	exportCallback(exports);
+
+}(function(exports){
+<#if (string.IsNullOrEmpty(this.ExportCallback)) {#>
+	$.proxies = exports.proxies;
+<#} else {#>
+	if (typeof <#= this.ExportCallback#> === 'function'){
+		<#= this.ExportCallback #>(exports);
+	}
+<#}#>
+}));
