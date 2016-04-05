@@ -10,29 +10,30 @@
 	var exports = {
 		options: {
 			baseUrl: "<#= this.Metadata.Host #>",
-			ajax:  function() {
+			ajax:  function(method, url, data) {
 				if (typeof window === 'undefined' || typeof window.jQuery === 'undefined') {
 					throw "WebApiProxy: jQuery is required if no other ajax method has been defined.";
 				}
-				return $.ajax.apply($, arguments);
-			},
-			ajaxDefaults: {},
+
+				var opts = {
+					type: method,
+					url: url,
+					dataType:"json"
+				};
+
+				if ((method === "post" || method === "put") && data) {
+					opts.data = JSON.stringify(data);
+				}
+
+				return window.jQuery.ajax.apply(window.jQuery, opts);
+			}
 		},
 		proxies: {}
 	};
 
 	function invoke(url, type, urlParams, body) {
-		url += getQueryString(urlParams);
-
-		var ajaxOptions = extend({}, exports.options.ajaxDefaults, this.defaultOptions, {
-            "url": combinePath(exports.options.baseUrl, url),            
-            "data": ((type === 'post' || type === 'put') && body) ? JSON.stringify(body) : null,
-            "type": type
-		});
-		
-		return exports.options.ajax(ajaxOptions);
+		return exports.options.ajax(type, combinePath(exports.options.baseUrl, composeUrl(url, urlParams)), body);
 	}
-
 
 	function extend(){
 		var extended = arguments[0] || {};
@@ -49,32 +50,39 @@
 
 		return extended;
 	}
-			
-	function getQueryString(params, queryString) {
-		queryString = queryString || "";
-		for(var prop in params) {
-			if (params.hasOwnProperty(prop)) {
-				var val = (params[prop] == null) ? null : params[prop];
-				if (val === null) continue;
 
-				if ("" + val === "[object Object]") {
-					queryString = getQueryString(params[prop], queryString);
-					continue;
-				}
+	function composeUrl(url, urlParams) {
+		var used = [];
+		var key;
+		var hasQuery = false;
 
-				if (queryString.length) {
-					queryString += "&";
+		url = url.replace(/\{(\w+)\}/gi, function(match, capture, offset) {			
+			if (typeof urlParams[capture] !== 'undefined'){
+				used[capture] = true;
+			}
+
+			if (urlParams[capture] == null){
+				return '';
+			} else {				
+				return urlParams[capture].toString();
+			}
+		});
+
+		for (key in urlParams){
+			if (!used[key] && urlParams[key] != null) {
+				if (!hasQuery && url.indexOf('?') === -1){
+					url += '?';
+					hasQuery = true;
 				} else {
-					queryString += "?";
+					url += '&';
 				}
-				queryString = queryString + prop + "=" +val;
+				url += key + '=' + urlParams[key].toString();
 			}
 		}
-		return queryString;
+
+		return url;
 	}
-
 	
-
 	function combinePath() {
         var path = '';
         var s;
@@ -120,7 +128,6 @@
 
 	var selectedParameters = allParameters.Where(m => m != null).Select(m => m.Name).ToList();	
 	var parameterList = string.Join(",", selectedParameters);
-	var url = ("\"" + method.Url.Replace("{", "\" + ").Replace("}", " + \"") + "\"").Replace(" + \"\"","");
 	var parameterString = new System.Text.StringBuilder();	
 
 	if (method.UrlParameters.Any()) {
@@ -137,7 +144,7 @@
 
 #>
 		"<#= method.Name.ToCamelCasing() #>": function(<#=parameterList#>) {
-			return invoke.call(this, <#= url #>, "<#=method.Type.ToString().ToLower()#>" <#=parameterString#>);
+			return invoke.call(this, "<#= method.Url #>", "<#=method.Type.ToString().ToLower()#>" <#=parameterString#>);
 		},
 <# } #> 
 	};
@@ -147,7 +154,7 @@
 
 }(function(exports){
 <#if (string.IsNullOrEmpty(this.ExportCallback)) {#>
-	$.proxies = exports.proxies;
+	window.jQuery.proxies = exports.proxies;
 <#} else {#>
 	if (typeof <#= this.ExportCallback#> === 'function'){
 		<#= this.ExportCallback #>(exports);

@@ -73,7 +73,7 @@ namespace WebApiProxy.Server
                                                                           DefaultValue = b.ParameterDescriptor.DefaultValue
                                                                       },
 
-                                                      Url = StripQuery(a.RelativePath),
+                                                      Url = a.RelativePath,
 
                                                       Description = a.Documentation ?? "",
                                                       ReturnType = ParseType(a.ResponseDescription.ResponseType ?? a.ResponseDescription.DeclaredType),
@@ -86,6 +86,7 @@ namespace WebApiProxy.Server
 
             metadata.Definitions = metadata.Definitions.Distinct().OrderBy(d => d.Name);
             metadata.Models = metadata.Models.Distinct(new ModelDefinitionEqualityComparer()).OrderBy(d => d.Name);
+
             return metadata;
 
         }

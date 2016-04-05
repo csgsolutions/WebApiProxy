@@ -36,54 +36,54 @@ namespace WebApiProxy.Server.Templates
             
             #line default
             #line hidden
-            this.Write("\",\r\n\t\t\tajax:  function() {\r\n\t\t\t\tif (typeof window === \'undefined\' || typeof windo" +
-                    "w.jQuery === \'undefined\') {\r\n\t\t\t\t\tthrow \"WebApiProxy: jQuery is required if no o" +
-                    "ther ajax method has been defined.\";\r\n\t\t\t\t}\r\n\t\t\t\treturn $.ajax.apply($, argument" +
-                    "s);\r\n\t\t\t},\r\n\t\t\tajaxDefaults: {},\r\n\t\t},\r\n\t\tproxies: {}\r\n\t};\r\n\r\n\tfunction invoke(u" +
-                    "rl, type, urlParams, body) {\r\n\t\turl += getQueryString(urlParams);\r\n\r\n\t\tvar ajaxO" +
-                    "ptions = extend({}, exports.options.ajaxDefaults, this.defaultOptions, {\r\n      " +
-                    "      \"url\": combinePath(exports.options.baseUrl, url),            \r\n           " +
-                    " \"data\": ((type === \'post\' || type === \'put\') && body) ? JSON.stringify(body) : " +
-                    "null,\r\n            \"type\": type\r\n\t\t});\r\n\t\t\r\n\t\treturn exports.options.ajax(ajaxOp" +
-                    "tions);\r\n\t}\r\n\r\n\r\n\tfunction extend(){\r\n\t\tvar extended = arguments[0] || {};\r\n\t\tva" +
-                    "r prop;\r\n\t\tvar i;\r\n\r\n\t\tfor (i = 1; i < arguments.length; i++) {\r\n\t\t\tfor (prop in" +
-                    " arguments[i]) {\r\n\t\t\t\tif (Object.prototype.hasOwnProperty.call(arguments[i], pro" +
-                    "p)) {\r\n\t\t\t\t\textended[prop] = arguments[i][prop];\r\n\t\t\t\t}\r\n\t\t\t}           \r\n\t\t}\r\n\r" +
-                    "\n\t\treturn extended;\r\n\t}\r\n\t\t\t\r\n\tfunction getQueryString(params, queryString) {\r\n\t" +
-                    "\tqueryString = queryString || \"\";\r\n\t\tfor(var prop in params) {\r\n\t\t\tif (params.ha" +
-                    "sOwnProperty(prop)) {\r\n\t\t\t\tvar val = (params[prop] == null) ? null : params[prop" +
-                    "];\r\n\t\t\t\tif (val === null) continue;\r\n\r\n\t\t\t\tif (\"\" + val === \"[object Object]\") {" +
-                    "\r\n\t\t\t\t\tqueryString = getQueryString(params[prop], queryString);\r\n\t\t\t\t\tcontinue;\r" +
-                    "\n\t\t\t\t}\r\n\r\n\t\t\t\tif (queryString.length) {\r\n\t\t\t\t\tqueryString += \"&\";\r\n\t\t\t\t} else {\r" +
-                    "\n\t\t\t\t\tqueryString += \"?\";\r\n\t\t\t\t}\r\n\t\t\t\tqueryString = queryString + prop + \"=\" +va" +
-                    "l;\r\n\t\t\t}\r\n\t\t}\r\n\t\treturn queryString;\r\n\t}\r\n\r\n\t\r\n\r\n\tfunction combinePath() {\r\n    " +
-                    "    var path = \'\';\r\n        var s;\r\n        var first;\r\n        var last;\r\n\r\n   " +
-                    "     for (var i = 0; i < arguments.length; i++) {\r\n            if (arguments[i] " +
-                    "== null) {\r\n                continue;\r\n            }\r\n            s = arguments[" +
-                    "i].toString();\r\n                        \r\n            first = s.indexOf(\'/\');\r\n\r" +
-                    "\n            if (s === \'/\' && path.length > 0) {\r\n                continue;\r\n   " +
-                    "         }\r\n            else if (path[path.length-1] === \'/\' && first === 0) {\r\n" +
-                    "                path += s.slice(1);\r\n            } else if (path[path.length - 1" +
-                    "] === \'/\' || first === 0) {\r\n                path += s;\r\n            } else if (" +
-                    "path.length > 0) {                \r\n                path += (\'/\'+s);\r\n          " +
-                    "  } else {\r\n                path += s;\r\n            }\r\n        }\r\n\r\n        retu" +
-                    "rn path;\r\n    }\r\n\r\n\t/* Proxies */\r\n\r\n");
+            this.Write("\",\r\n\t\t\tajax:  function(method, url, data) {\r\n\t\t\t\tif (typeof window === \'undefined" +
+                    "\' || typeof window.jQuery === \'undefined\') {\r\n\t\t\t\t\tthrow \"WebApiProxy: jQuery is" +
+                    " required if no other ajax method has been defined.\";\r\n\t\t\t\t}\r\n\r\n\t\t\t\tvar opts = {" +
+                    "\r\n\t\t\t\t\ttype: method,\r\n\t\t\t\t\turl: url,\r\n\t\t\t\t\tdataType:\"json\"\r\n\t\t\t\t};\r\n\r\n\t\t\t\tif ((m" +
+                    "ethod === \"post\" || method === \"put\") && data) {\r\n\t\t\t\t\topts.data = JSON.stringif" +
+                    "y(data);\r\n\t\t\t\t}\r\n\r\n\t\t\t\treturn window.jQuery.ajax.apply(window.jQuery, opts);\r\n\t\t" +
+                    "\t}\r\n\t\t},\r\n\t\tproxies: {}\r\n\t};\r\n\r\n\tfunction invoke(url, type, urlParams, body) {\r\n" +
+                    "\t\treturn exports.options.ajax(type, combinePath(exports.options.baseUrl, compose" +
+                    "Url(url, urlParams)), body);\r\n\t}\r\n\r\n\tfunction extend(){\r\n\t\tvar extended = argume" +
+                    "nts[0] || {};\r\n\t\tvar prop;\r\n\t\tvar i;\r\n\r\n\t\tfor (i = 1; i < arguments.length; i++)" +
+                    " {\r\n\t\t\tfor (prop in arguments[i]) {\r\n\t\t\t\tif (Object.prototype.hasOwnProperty.cal" +
+                    "l(arguments[i], prop)) {\r\n\t\t\t\t\textended[prop] = arguments[i][prop];\r\n\t\t\t\t}\r\n\t\t\t}" +
+                    "           \r\n\t\t}\r\n\r\n\t\treturn extended;\r\n\t}\r\n\r\n\tfunction composeUrl(url, urlParam" +
+                    "s) {\r\n\t\tvar used = [];\r\n\t\tvar key;\r\n\t\tvar hasQuery = false;\r\n\r\n\t\turl = url.repla" +
+                    "ce(/\\{(\\w+)\\}/gi, function(match, capture, offset) {\t\t\t\r\n\t\t\tif (typeof urlParams" +
+                    "[capture] !== \'undefined\'){\r\n\t\t\t\tused[capture] = true;\r\n\t\t\t}\r\n\r\n\t\t\tif (urlParams" +
+                    "[capture] == null){\r\n\t\t\t\treturn \'\';\r\n\t\t\t} else {\t\t\t\t\r\n\t\t\t\treturn urlParams[captu" +
+                    "re].toString();\r\n\t\t\t}\r\n\t\t});\r\n\r\n\t\tfor (key in urlParams){\r\n\t\t\tif (!used[key] && " +
+                    "urlParams[key] != null) {\r\n\t\t\t\tif (!hasQuery && url.indexOf(\'?\') === -1){\r\n\t\t\t\t\t" +
+                    "url += \'?\';\r\n\t\t\t\t\thasQuery = true;\r\n\t\t\t\t} else {\r\n\t\t\t\t\turl += \'&\';\r\n\t\t\t\t}\r\n\t\t\t\tu" +
+                    "rl += key + \'=\' + urlParams[key].toString();\r\n\t\t\t}\r\n\t\t}\r\n\r\n\t\treturn url;\r\n\t}\r\n\t\r" +
+                    "\n\tfunction combinePath() {\r\n        var path = \'\';\r\n        var s;\r\n        var " +
+                    "first;\r\n        var last;\r\n\r\n        for (var i = 0; i < arguments.length; i++) " +
+                    "{\r\n            if (arguments[i] == null) {\r\n                continue;\r\n         " +
+                    "   }\r\n            s = arguments[i].toString();\r\n                        \r\n      " +
+                    "      first = s.indexOf(\'/\');\r\n\r\n            if (s === \'/\' && path.length > 0) {" +
+                    "\r\n                continue;\r\n            }\r\n            else if (path[path.lengt" +
+                    "h-1] === \'/\' && first === 0) {\r\n                path += s.slice(1);\r\n           " +
+                    " } else if (path[path.length - 1] === \'/\' || first === 0) {\r\n                pat" +
+                    "h += s;\r\n            } else if (path.length > 0) {                \r\n            " +
+                    "    path += (\'/\'+s);\r\n            } else {\r\n                path += s;\r\n        " +
+                    "    }\r\n        }\r\n\r\n        return path;\r\n    }\r\n\r\n\t/* Proxies */\r\n\r\n");
             
-            #line 111 "C:\code\git\WebApiProxy\WebApiProxy.Server\Templates\JsProxyTemplate.tt"
+            #line 119 "C:\code\git\WebApiProxy\WebApiProxy.Server\Templates\JsProxyTemplate.tt"
  foreach(var definition in this.Metadata.Definitions) { 
             
             #line default
             #line hidden
             this.Write("\texports.proxies[\"");
             
-            #line 112 "C:\code\git\WebApiProxy\WebApiProxy.Server\Templates\JsProxyTemplate.tt"
+            #line 120 "C:\code\git\WebApiProxy\WebApiProxy.Server\Templates\JsProxyTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(definition.Name.ToLower()));
             
             #line default
             #line hidden
             this.Write("\"] = {\r\n\t\t\"defaultOptions\": {},\r\n");
             
-            #line 114 "C:\code\git\WebApiProxy\WebApiProxy.Server\Templates\JsProxyTemplate.tt"
+            #line 122 "C:\code\git\WebApiProxy\WebApiProxy.Server\Templates\JsProxyTemplate.tt"
  foreach(var method in definition.ActionMethods.OrderBy(m => m.Name)) {	
 	var allParameters = method.UrlParameters.AsEnumerable();	
 	
@@ -93,7 +93,6 @@ namespace WebApiProxy.Server.Templates
 
 	var selectedParameters = allParameters.Where(m => m != null).Select(m => m.Name).ToList();	
 	var parameterList = string.Join(",", selectedParameters);
-	var url = ("\"" + method.Url.Replace("{", "\" + ").Replace("}", " + \"") + "\"").Replace(" + \"\"","");
 	var parameterString = new System.Text.StringBuilder();	
 
 	if (method.UrlParameters.Any()) {
@@ -114,84 +113,84 @@ namespace WebApiProxy.Server.Templates
             #line hidden
             this.Write("\t\t\"");
             
-            #line 139 "C:\code\git\WebApiProxy\WebApiProxy.Server\Templates\JsProxyTemplate.tt"
+            #line 146 "C:\code\git\WebApiProxy\WebApiProxy.Server\Templates\JsProxyTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(method.Name.ToCamelCasing()));
             
             #line default
             #line hidden
             this.Write("\": function(");
             
-            #line 139 "C:\code\git\WebApiProxy\WebApiProxy.Server\Templates\JsProxyTemplate.tt"
+            #line 146 "C:\code\git\WebApiProxy\WebApiProxy.Server\Templates\JsProxyTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(parameterList));
             
             #line default
             #line hidden
-            this.Write(") {\r\n\t\t\treturn invoke.call(this, ");
+            this.Write(") {\r\n\t\t\treturn invoke.call(this, \"");
             
-            #line 140 "C:\code\git\WebApiProxy\WebApiProxy.Server\Templates\JsProxyTemplate.tt"
-            this.Write(this.ToStringHelper.ToStringWithCulture(url));
+            #line 147 "C:\code\git\WebApiProxy\WebApiProxy.Server\Templates\JsProxyTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(method.Url));
             
             #line default
             #line hidden
-            this.Write(", \"");
+            this.Write("\", \"");
             
-            #line 140 "C:\code\git\WebApiProxy\WebApiProxy.Server\Templates\JsProxyTemplate.tt"
+            #line 147 "C:\code\git\WebApiProxy\WebApiProxy.Server\Templates\JsProxyTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(method.Type.ToString().ToLower()));
             
             #line default
             #line hidden
             this.Write("\" ");
             
-            #line 140 "C:\code\git\WebApiProxy\WebApiProxy.Server\Templates\JsProxyTemplate.tt"
+            #line 147 "C:\code\git\WebApiProxy\WebApiProxy.Server\Templates\JsProxyTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(parameterString));
             
             #line default
             #line hidden
             this.Write(");\r\n\t\t},\r\n");
             
-            #line 142 "C:\code\git\WebApiProxy\WebApiProxy.Server\Templates\JsProxyTemplate.tt"
+            #line 149 "C:\code\git\WebApiProxy\WebApiProxy.Server\Templates\JsProxyTemplate.tt"
  } 
             
             #line default
             #line hidden
             this.Write(" \r\n\t};\r\n");
             
-            #line 144 "C:\code\git\WebApiProxy\WebApiProxy.Server\Templates\JsProxyTemplate.tt"
+            #line 151 "C:\code\git\WebApiProxy\WebApiProxy.Server\Templates\JsProxyTemplate.tt"
 	} 
             
             #line default
             #line hidden
             this.Write("\r\n\texportCallback(exports);\r\n\r\n}(function(exports){\r\n");
             
-            #line 149 "C:\code\git\WebApiProxy\WebApiProxy.Server\Templates\JsProxyTemplate.tt"
+            #line 156 "C:\code\git\WebApiProxy\WebApiProxy.Server\Templates\JsProxyTemplate.tt"
 if (string.IsNullOrEmpty(this.ExportCallback)) {
             
             #line default
             #line hidden
-            this.Write("\t$.proxies = exports.proxies;\r\n");
+            this.Write("\twindow.jQuery.proxies = exports.proxies;\r\n");
             
-            #line 151 "C:\code\git\WebApiProxy\WebApiProxy.Server\Templates\JsProxyTemplate.tt"
+            #line 158 "C:\code\git\WebApiProxy\WebApiProxy.Server\Templates\JsProxyTemplate.tt"
 } else {
             
             #line default
             #line hidden
             this.Write("\tif (typeof ");
             
-            #line 152 "C:\code\git\WebApiProxy\WebApiProxy.Server\Templates\JsProxyTemplate.tt"
+            #line 159 "C:\code\git\WebApiProxy\WebApiProxy.Server\Templates\JsProxyTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(this.ExportCallback));
             
             #line default
             #line hidden
             this.Write(" === \'function\'){\r\n\t\t");
             
-            #line 153 "C:\code\git\WebApiProxy\WebApiProxy.Server\Templates\JsProxyTemplate.tt"
+            #line 160 "C:\code\git\WebApiProxy\WebApiProxy.Server\Templates\JsProxyTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(this.ExportCallback));
             
             #line default
             #line hidden
             this.Write("(exports);\r\n\t}\r\n");
             
-            #line 155 "C:\code\git\WebApiProxy\WebApiProxy.Server\Templates\JsProxyTemplate.tt"
+            #line 162 "C:\code\git\WebApiProxy\WebApiProxy.Server\Templates\JsProxyTemplate.tt"
 }
             
             #line default
