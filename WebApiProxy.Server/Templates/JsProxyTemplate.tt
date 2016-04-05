@@ -18,14 +18,15 @@
 				var opts = {
 					type: method,
 					url: url,
-					dataType:"json"
+					dataType:"json",
+					contentType: (method === 'get' && data) ? null : "application/json; charset=utf-8"
 				};
 
 				if ((method === "post" || method === "put") && data) {
 					opts.data = JSON.stringify(data);
 				}
 
-				return window.jQuery.ajax.apply(window.jQuery, opts);
+				return window.jQuery.ajax.apply(window.jQuery, [opts]);
 			}
 		},
 		proxies: {}
