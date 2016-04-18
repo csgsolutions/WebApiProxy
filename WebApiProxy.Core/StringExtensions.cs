@@ -22,7 +22,14 @@ namespace WebApiProxy
 
         public static string ToCamelCasing(this string helper)
         {
-            return helper.Replace(helper[0].ToString(), helper[0].ToString().ToLower());
+            if (helper.Length > 1)
+            {
+                return string.Concat(helper[0].ToString().ToLower(), helper.Substring(1));
+            }
+            else
+            {
+                return helper[0].ToString().ToLower();
+            }
         }
 
         /// <summary>
