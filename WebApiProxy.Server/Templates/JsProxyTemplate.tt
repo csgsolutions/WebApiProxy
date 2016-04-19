@@ -9,24 +9,32 @@
 
 	var exports = {
 		options: {
-			baseUrl: "<#= this.Metadata.Host #>",
-			ajax:  function(method, url, data) {
+			baseUrl: "<#= this.Metadata.Host #>",			
+			ajaxDefaults: {
+				dataType: "json"
+			},
+			ajax: function(method, url, data) {
 				if (typeof window === 'undefined' || typeof window.jQuery === 'undefined') {
 					throw "WebApiProxy: jQuery is required if no other ajax method has been defined.";
 				}
 
-				var opts = {
+				var req = $.extend(true, {}, exports.options.ajaxDefaults,  {
 					type: method,
 					url: url,
-					dataType:"json",
-					contentType: (method === 'get' && data) ? null : "application/json; charset=utf-8"
-				};
+					contentType: (method === 'get') ? null : "application/json; charset=utf-8"
+				});
 
 				if ((method === "post" || method === "put") && data) {
-					opts.data = JSON.stringify(data);
+					req.data = JSON.stringify(data);
 				}
 
-				return window.jQuery.ajax.apply(window.jQuery, [opts]);
+				exports.options.onBeforeRequest(req);
+				
+				return window.jQuery.ajax.apply(window.jQuery, [req]).then(exports.options.onRequestComplete, exports.options.onRequestComplete);
+			},
+			onBeforeRequest: function(req){
+			},
+			onRequestComplete: function(){
 			}
 		},
 		proxies: {}
@@ -36,7 +44,7 @@
 		return exports.options.ajax(type, combinePath(exports.options.baseUrl, composeUrl(url, urlParams)), body);
 	}
 
-	function extend(){
+	function extend() {
 		var extended = arguments[0] || {};
 		var prop;
 		var i;
